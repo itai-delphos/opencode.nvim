@@ -197,15 +197,29 @@ local function poll_for_port(fn, callback)
 end
 
 ---Attempt to get the `opencode` server's port. Tries, in order:
----1. A process responding on `opts.port`.
----2. Any `opencode` process running in Neovim's CWD. Prioritizes embedded.
----3. Calling `opts.provider.start` and polling for the port.
+---1. Provider's get_port() method (if implemented).
+---2. A process responding on `opts.port`.
+---3. Any `opencode` process running in Neovim's CWD. Prioritizes embedded.
+---4. Calling `opts.provider.start` and polling for the port.
 ---
 ---@param launch boolean? Whether to launch a new server if none found. Defaults to true.
 ---@return Promise<number>
 function M.get_port(launch)
   launch = launch ~= false
   return require("opencode.promise").new(function(resolve, reject)
+    -- Check if provider can supply port directly
+    local provider = require("opencode.config").provider
+    if provider and provider.get_port then
+      local provider_port = provider:get_port()
+      if provider_port then
+        local ok, _ = pcall(require("opencode.cli.client").get_path, provider_port)
+        if ok then
+          resolve(provider_port)
+          return
+        end
+      end
+    end
+
     local configured_port = require("opencode.config").opts.port
     local find_port_fn = function()
       if configured_port then

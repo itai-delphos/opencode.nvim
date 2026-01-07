@@ -61,4 +61,9 @@ function Snacks:stop()
   end
 end
 
+---@return number|nil
+function Snacks:get_port()
+  return nil
+end
+
 return Snacks

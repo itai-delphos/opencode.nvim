@@ -155,4 +155,9 @@ function Kitty:stop()
   end
 end
 
+---@return number|nil
+function Kitty:get_port()
+  return nil
+end
+
 return Kitty
