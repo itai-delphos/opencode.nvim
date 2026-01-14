@@ -80,7 +80,7 @@ function M.check()
   end
 
   -- Binaries for auto-finding `opencode` process (Unix only)
-  if vim.fn.has("win32") == 0 and not vim.g.opencode_opts.port then
+  if vim.fn.has("win32") == 0 and (not vim.g.opencode_opts or not vim.g.opencode_opts.port) then
     if vim.fn.executable("pgrep") == 1 then
       vim.health.ok("`pgrep` available.")
     else
