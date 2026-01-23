@@ -7,7 +7,7 @@ Thank you for wanting to contribute!
 - **Align with project vision:** If unsure, propose changes in an issue or discussion first.
   - Bridge Neovim and `opencode`'s TUI — not replace the latter.
   - Simple, intuitive UX.
-- **Add more value than maintenance burden**:
+- **Add more value than maintenance burden**
   - Prefer simple, robust solutions.
   - Consider edge cases and existing project patterns.
   - Core functionality should be widely useful — not hyper-specific.
