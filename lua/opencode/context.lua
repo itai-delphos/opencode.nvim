@@ -388,6 +388,10 @@ end
 ---The git diff (unified diff format).
 function Context:git_diff()
   local result = vim.system({ "git", "--no-pager", "diff" }, { text = true }):wait()
+  if result.code == 129 then
+    -- Not a git repository
+    return nil
+  end
   require("opencode.util").check_system_call(result, "git diff")
   if result.stdout == "" then
     return nil
