@@ -206,18 +206,26 @@ end
 ---@return Promise<number>
 function M.get_port(launch)
   launch = launch ~= false
+  local debug = require("opencode.util.debug")
   return require("opencode.promise").new(function(resolve, reject)
     -- Check if provider can supply port directly
     local provider = require("opencode.config").provider
     if provider and provider.get_port then
+      debug.log("[SERVER] get_port: checking provider.get_port()", vim.log.levels.INFO)
       local provider_port = provider:get_port()
+      debug.log("[SERVER] get_port: provider returned port=" .. tostring(provider_port), vim.log.levels.INFO)
       if provider_port then
         local ok, _ = pcall(require("opencode.cli.client").get_path, provider_port)
         if ok then
+          debug.log("[SERVER] get_port: provider port validated, using " .. provider_port, vim.log.levels.INFO)
           resolve(provider_port)
           return
+        else
+          debug.log("[SERVER] get_port: provider port validation failed, falling back to CWD discovery", vim.log.levels.WARN)
         end
       end
+    else
+      debug.log("[SERVER] get_port: provider does not implement get_port(), using CWD discovery", vim.log.levels.DEBUG)
     end
 
     local configured_port = require("opencode.config").opts.port

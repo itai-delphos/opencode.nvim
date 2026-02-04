@@ -18,6 +18,10 @@ vim.g.opencode_opts = vim.g.opencode_opts
 ---If set, `opencode.nvim` will append `--port <port>` to `provider.cmd`.
 ---@field port? number
 ---
+---Enable debug logging for PID tracking and provider operations.
+---Logs are written to `stdpath("cache")/opencode-debug.log`.
+---@field debug? boolean
+---
 ---Contexts to inject into prompts, keyed by their placeholder.
 ---@field contexts? table<string, fun(context: opencode.Context): string|nil>
 ---
@@ -45,6 +49,7 @@ vim.g.opencode_opts = vim.g.opencode_opts
 ---@type opencode.Opts
 local defaults = {
   port = nil,
+  debug = false,
   -- stylua: ignore
   contexts = {
     ["@this"] = function(context) return context:this() end,
