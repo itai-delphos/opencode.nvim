@@ -8,6 +8,9 @@
 ---
 ---Cached port of the `opencode` server (internal use only).
 ---@field port? number
+---
+---Cached PID of the opencode process (internal use only).
+---@field cached_pid? number
 local Tmux = {}
 Tmux.__index = Tmux
 Tmux.name = "tmux"
@@ -43,6 +46,7 @@ function Tmux.new(opts)
   self.opts = opts or {}
   self.pane_id = nil
   self.port = nil
+  self.cached_pid = nil
   return self
 end
 
@@ -133,6 +137,7 @@ function Tmux:stop()
     vim.fn.system("tmux kill-pane -t " .. pane_id)
     self.pane_id = nil
     self.port = nil
+    self.cached_pid = nil
   end
 end
 
@@ -161,22 +166,33 @@ end
 ---@return number|nil port
 function Tmux:get_port()
   local debug = require("opencode.util.debug")
-  -- Return cached port if pane still exists
+  
+  -- Get current pane PID to check if process has changed
+  local current_pid = self:get_pane_process_pid()
+  if not current_pid then
+    debug.log("[TMUX] get_port: no pane_pid, clearing cache and returning nil", vim.log.levels.WARN)
+    self.port = nil
+    self.cached_pid = nil
+    return nil
+  end
+  
+  -- If PID has changed, clear the cached port (OpenCode was restarted)
+  if self.cached_pid and self.cached_pid ~= current_pid then
+    debug.log("[TMUX] get_port: PID changed from " .. self.cached_pid .. " to " .. current_pid .. ", clearing cached port", vim.log.levels.INFO)
+    self.port = nil
+  end
+  
+  -- Return cached port if still valid
   if self.port and self:get_pane_id() then
-    debug.log("[TMUX] get_port: returning cached port=" .. self.port, vim.log.levels.INFO)
+    debug.log("[TMUX] get_port: returning cached port=" .. self.port .. " for pid=" .. current_pid, vim.log.levels.INFO)
     return self.port
   end
 
-  local pane_pid = self:get_pane_process_pid()
-  if not pane_pid then
-    debug.log("[TMUX] get_port: no pane_pid, returning nil", vim.log.levels.WARN)
-    return nil
-  end
-
-  debug.log("[TMUX] get_port: searching for listening port in descendants of pid=" .. pane_pid, vim.log.levels.INFO)
+  debug.log("[TMUX] get_port: searching for listening port in descendants of pid=" .. current_pid, vim.log.levels.INFO)
   local process = require("opencode.util.process")
-  self.port = process.get_descendant_listening_port(pane_pid, 3)
-  debug.log("[TMUX] get_port: found port=" .. tostring(self.port), vim.log.levels.INFO)
+  self.port = process.get_descendant_listening_port(current_pid, 3)
+  self.cached_pid = current_pid
+  debug.log("[TMUX] get_port: found port=" .. tostring(self.port) .. " cached pid=" .. current_pid, vim.log.levels.INFO)
   return self.port
 end
 

@@ -210,10 +210,13 @@ function M.get_port(launch)
   return require("opencode.promise").new(function(resolve, reject)
     -- Check if provider can supply port directly
     local provider = require("opencode.config").provider
+    local provider_has_no_instance = false
+    
     if provider and provider.get_port then
       debug.log("[SERVER] get_port: checking provider.get_port()", vim.log.levels.INFO)
       local provider_port = provider:get_port()
       debug.log("[SERVER] get_port: provider returned port=" .. tostring(provider_port), vim.log.levels.INFO)
+      
       if provider_port then
         local ok, _ = pcall(require("opencode.cli.client").get_path, provider_port)
         if ok then
@@ -223,6 +226,10 @@ function M.get_port(launch)
         else
           debug.log("[SERVER] get_port: provider port validation failed, falling back to CWD discovery", vim.log.levels.WARN)
         end
+      else
+        -- Provider returned nil, meaning it has no managed instance
+        provider_has_no_instance = true
+        debug.log("[SERVER] get_port: provider has no managed instance", vim.log.levels.INFO)
       end
     else
       debug.log("[SERVER] get_port: provider does not implement get_port(), using CWD discovery", vim.log.levels.DEBUG)
@@ -230,6 +237,17 @@ function M.get_port(launch)
 
     local configured_port = require("opencode.config").opts.port
     local find_port_fn = function()
+      -- Try provider's get_port() first (important for polling after start)
+      if provider and provider.get_port then
+        local provider_port = provider:get_port()
+        if provider_port then
+          local ok, _ = pcall(require("opencode.cli.client").get_path, provider_port)
+          if ok then
+            return provider_port
+          end
+        end
+      end
+      
       if configured_port then
         -- Test the configured port
         local ok, path = pcall(require("opencode.cli.client").get_path, configured_port)
@@ -239,17 +257,26 @@ function M.get_port(launch)
           error("No `opencode` responding on configured port: " .. configured_port, 0)
         end
       else
+        -- If provider has no instance and we're about to launch, don't search for other instances
+        if provider_has_no_instance and launch and provider and provider.start then
+          error("Provider has no managed instance", 0)
+        end
         return find_server_in_nvim_cwd().port
       end
     end
+    
     local initial_ok, initial_result = pcall(find_port_fn)
+    debug.log("[SERVER] get_port: initial check initial_ok=" .. tostring(initial_ok) .. " result=" .. tostring(initial_result), vim.log.levels.INFO)
     if initial_ok then
       resolve(initial_result)
       return
     end
+    debug.log("[SERVER] get_port: launch=" .. tostring(launch), vim.log.levels.INFO)
     if launch then
       vim.notify(initial_result .. " — starting `opencode`…", vim.log.levels.INFO, { title = "opencode" })
+      debug.log("[SERVER] get_port: calling provider.start()", vim.log.levels.INFO)
       local start_ok, start_result = pcall(require("opencode.provider").start)
+      debug.log("[SERVER] get_port: provider.start() returned start_ok=" .. tostring(start_ok) .. " result=" .. tostring(start_result), vim.log.levels.INFO)
       if not start_ok then
         reject("Error starting `opencode`: " .. start_result)
         return
@@ -257,7 +284,13 @@ function M.get_port(launch)
     end
     poll_for_port(find_port_fn, function(ok, result)
       if ok then
-        resolve(result)
+        -- Add a small delay to ensure OpenCode TUI is fully initialized
+        -- The port can be available but OpenCode may not be ready to receive commands yet
+        debug.log("[SERVER] get_port: port found via polling, waiting for TUI initialization", vim.log.levels.INFO)
+        vim.defer_fn(function()
+          debug.log("[SERVER] get_port: resolving with port=" .. result, vim.log.levels.INFO)
+          resolve(result)
+        end, 500) -- 500ms delay
       else
         reject(result)
       end

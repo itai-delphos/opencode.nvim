@@ -26,6 +26,8 @@ function M.prompt(prompt, opts)
   require("opencode.cli.server")
     .get_port()
     :next(function(port) ---@param port number
+      local debug = require("opencode.util.debug")
+      debug.log("[PROMPT] get_port resolved with port=" .. port, vim.log.levels.INFO)
       if opts.clear then
         return require("opencode.promise").new(function(resolve)
           require("opencode.cli.client").tui_execute_command("prompt.clear", port, function()
@@ -36,10 +38,13 @@ function M.prompt(prompt, opts)
       return port
     end)
     :next(function(port) ---@param port number
+      local debug = require("opencode.util.debug")
       local rendered = opts.context:render(prompt)
       local plaintext = opts.context.plaintext(rendered.output)
+      debug.log("[PROMPT] sending prompt: " .. plaintext:sub(1, 100), vim.log.levels.INFO)
       return require("opencode.promise").new(function(resolve)
         require("opencode.cli.client").tui_append_prompt(plaintext, port, function()
+          debug.log("[PROMPT] tui_append_prompt callback executed", vim.log.levels.INFO)
           resolve(port)
         end)
       end)

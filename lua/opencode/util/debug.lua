@@ -8,7 +8,17 @@ local log_file = vim.fn.stdpath("cache") .. "/opencode-debug.log"
 ---@return boolean
 local function is_enabled()
   local ok, config = pcall(require, "opencode.config")
-  return ok and config.opts.debug == true
+  if not ok then
+    return false
+  end
+  -- Support both debug = true and debug = { enabled = true }
+  if type(config.opts.debug) == "boolean" then
+    return config.opts.debug
+  end
+  if type(config.opts.debug) == "table" then
+    return config.opts.debug.enabled == true
+  end
+  return false
 end
 
 ---Initialize debug logging (clear old log)
