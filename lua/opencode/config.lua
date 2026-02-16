@@ -83,8 +83,8 @@ local defaults = {
           i_cr = {
             desc = "submit",
           },
-          i_c_cr = {
-            "<c-cr>",
+          i_s_cr = {
+            "<S-CR>",
             function(win)
               -- Append `\n` to leverage `ask()`'s auto-append behavior in that case
               local text = win:text() .. "\\n"
@@ -95,7 +95,7 @@ local defaults = {
             desc = "append",
           },
         },
-        footer_keys = { "<cr>", "<c-cr>" },
+        footer_keys = { "<CR>", "<S-CR>" },
       },
     },
   },

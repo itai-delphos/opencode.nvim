@@ -12,7 +12,7 @@ local M = {}
 ---   - Press `<Tab>` to trigger built-in completion.
 --- - End the prompt with `\n` to append instead of submit.
 --- - Additionally, when using `snacks.input`:
----   - Press `<C-CR>` to append instead of submit.
+---   - Press `<S-CR>` to append instead of submit.
 ---   - When using `blink.cmp`, registers `opts.ask.blink_cmp_sources`.
 ---
 ---@param default? string Text to pre-fill the input with.
