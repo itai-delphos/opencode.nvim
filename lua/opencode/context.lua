@@ -352,6 +352,24 @@ function Context:visible_text()
   return table.concat(visible, " ")
 end
 
+---@param diagnostic vim.Diagnostic
+---@return string
+function Context.format_diagnostic(diagnostic)
+  local location = Context.format({
+    start_line = diagnostic.lnum + 1,
+    start_col = diagnostic.col + 1,
+    end_line = diagnostic.end_lnum + 1,
+    end_col = diagnostic.end_col + 1,
+  })
+
+  return string.format(
+    "%s (%s): %s",
+    location,
+    diagnostic.source or "unknown source",
+    diagnostic.message:gsub("%s+", " "):gsub("^%s", ""):gsub("%s$", "")
+  )
+end
+
 ---Diagnostics for the current buffer.
 function Context:diagnostics()
   local diagnostics = vim.diagnostic.get(self.buf)
@@ -359,29 +377,13 @@ function Context:diagnostics()
     return nil
   end
 
-  local file_ref = Context.format({ buf = self.buf })
+  local filepath = Context.format({ buf = self.buf })
 
-  local diagnostic_strings = {}
-  for _, diagnostic in ipairs(diagnostics) do
-    local location = Context.format({
-      start_line = diagnostic.lnum + 1,
-      start_col = diagnostic.col + 1,
-      end_line = diagnostic.end_lnum + 1,
-      end_col = diagnostic.end_col + 1,
-    })
+  local diagnostic_strings = vim.tbl_map(function(diagnostic)
+    return "- " .. Context.format_diagnostic(diagnostic)
+  end, diagnostics)
 
-    table.insert(
-      diagnostic_strings,
-      string.format(
-        "- %s (%s): %s",
-        location,
-        diagnostic.source or "unknown source",
-        diagnostic.message:gsub("%s+", " "):gsub("^%s", ""):gsub("%s$", "")
-      )
-    )
-  end
-
-  return #diagnostics .. " diagnostics in " .. file_ref .. "\n" .. table.concat(diagnostic_strings, "\n")
+  return #diagnostics .. " diagnostics in " .. filepath .. "\n" .. table.concat(diagnostic_strings, "\n")
 end
 
 ---Formatted quickfix list entries.

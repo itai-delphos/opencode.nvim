@@ -32,6 +32,9 @@ vim.g.opencode_opts = vim.g.opencode_opts
 ---Supports [`snacks.picker`](https://github.com/folke/snacks.nvim/blob/main/docs/picker.md).
 ---@field select? opencode.select.Opts
 ---
+---Options for the in-process LSP that interacts with `opencode`.
+---@field lsp? opencode.lsp.Opts
+---
 ---Options for `opencode` event handling.
 ---@field events? opencode.events.Opts
 ---
@@ -105,7 +108,7 @@ local defaults = {
         on_buf = function(win)
           -- Make sure your completion plugin has the LSP source enabled,
           -- either by default or for the `opencode_ask` filetype!
-          vim.lsp.start(require("opencode.lsp"), {
+          vim.lsp.start(require("opencode.ui.ask.cmp"), {
             bufnr = win.buf,
           })
         end,
@@ -138,6 +141,10 @@ local defaults = {
         hidden = {}, -- preview is hidden by default in `vim.ui.select`
       },
     },
+  },
+  lsp = {
+    enabled = true,
+    filetypes = nil,
   },
   events = {
     enabled = true,

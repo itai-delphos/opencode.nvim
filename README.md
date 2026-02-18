@@ -336,6 +336,18 @@ Command `opencode`:
 | `prompt.clear`           | Clear the TUI input                                |
 | `agent.cycle`            | Cycle the selected agent                           |
 
+
+### LSP
+
+> [!WARNING]
+> This feature is experimental!
+
+`opencode.nvim` provides an in-process LSP to interact with `opencode` via the LSP functions you're used to!
+
+| LSP function | Action                                               |
+| ------------ | ---------------------------------------------------- |
+| Code actions | Asks `opencode` to fix diagnostics under the cursor. |
+
 ## 👀 Events
 
 `opencode.nvim` forwards `opencode`'s Server-Sent-Events as an `OpencodeEvent` autocmd:

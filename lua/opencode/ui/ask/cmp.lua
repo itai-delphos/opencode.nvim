@@ -26,7 +26,7 @@ handlers[ms.initialize] = function(params, callback)
       },
     },
     serverInfo = {
-      name = "opencode",
+      name = "opencode_ask_cmp",
     },
   })
 end
@@ -111,9 +111,11 @@ handlers[ms.completionItem_resolve] = function(params, callback)
   callback(nil, item)
 end
 
+---An in-process LSP that provides completions for context placeholders and agents.
+---
 ---@type vim.lsp.Config
 return {
-  name = "opencode",
+  name = "opencode_ask_cmp",
   -- Note the filetype has no effect because `snacks.input` buftype is `prompt`.
   -- https://github.com/neovim/neovim/issues/36775
   -- Instead, we manually start the LSP in a callback.
